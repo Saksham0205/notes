@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../db/app_database.dart';
 
-class NotesScreen extends StatelessWidget {
+class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
 
+  @override
+  State<NotesScreen> createState() => _NotesScreenState();
+}
+
+class _NotesScreenState extends State<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     final db = context.read<AppDatabase>();
@@ -16,11 +21,27 @@ class NotesScreen extends StatelessWidget {
       body: StreamBuilder<List<Note>>(
         stream: db.watchNotes(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          // Show error if there's one
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text('Error: ${snapshot.error}'),
+                ],
+              ),
+            );
+          }
+
+          // Show loading only while waiting for first data
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final notes = snapshot.data!;
+          // If we have data (even if null), show it
+          final notes = snapshot.data ?? [];
 
           if (notes.isEmpty) {
             return const Center(child: Text('No notes yet'));
