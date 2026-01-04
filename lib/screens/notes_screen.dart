@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:notes/screens/components/my_drawer.dart';
 import 'package:provider/provider.dart';
 import '../db/app_database.dart';
+import 'components/notes_title.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -19,15 +21,19 @@ class _NotesScreenState extends State<NotesScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
+      drawer: MyDrawer(),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addNoteDialog(context, db),
         child: const Icon(Icons.add,),
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(left: 10),
+            padding: EdgeInsets.only(left: 25),
             child: Text("Notes",style: GoogleFonts.dmSerifText(
               fontSize: 48,
               color: Theme.of(context).colorScheme.inversePrimary,
@@ -43,9 +49,18 @@ class _NotesScreenState extends State<NotesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error, color: Colors.red, size: 48),
+                        Icon(
+                          Icons.error,
+                          color: Theme.of(context).colorScheme.inversePrimary,
+                          size: 48,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Error: ${snapshot.error}'),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.inversePrimary,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -53,37 +68,39 @@ class _NotesScreenState extends State<NotesScreen> {
 
                 // Show loading only while waiting for first data
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.inversePrimary,
+                    ),
+                  );
                 }
 
                 // If we have data (even if null), show it
                 final notes = snapshot.data ?? [];
 
                 if (notes.isEmpty) {
-                  return const Center(child: Text('No notes yet'));
+                  return Center(
+                    child: Text(
+                      'No notes yet',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.inversePrimary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  );
                 }
 
                 return ListView.builder(
                   itemCount: notes.length,
                   itemBuilder: (context, index) {
                     final note = notes[index];
-                    return ListTile(
-                      title: Text(note.content),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _updateNoteDialog(context, db, note),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              db.deleteNote(note.id);
-                            },
-                          ),
-                        ],
-                      )
+                    return NotesTitle(text: note.content,
+                      onEditPressed: () {
+                        _updateNoteDialog(context, db, note);
+                      },
+                      onDeletePressed: () {
+                        db.deleteNote(note.id);
+                      },
                     );
                   },
                 );
